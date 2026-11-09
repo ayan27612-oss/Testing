@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Happy Scribe Clone — Audio to Text & Subtitles in One Place</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#4f46e5',
+              600: '#4338ca',
+              700: '#3730a3',
+              900: '#1e1b4b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+    }
+    h1, h2, h3, h4, .font-display {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .word-token {
+      transition: all 0.15s ease;
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 1px 3px;
+    }
+    .word-token:hover {
+      background-color: #e0e7ff;
+    }
+    .word-active {
+      background-color: #4f46e5 !important;
+      color: #ffffff !important;
+      font-weight: 600;
+      box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35);
+    }
+    .waveform-bar {
+      transition: height 0.15s ease, background-color 0.15s ease;
+    }
+    .hero-mesh {
+      background: radial-gradient(circle at 15% 20%, rgba(224, 231, 255, 0.7) 0%, transparent 45%),
+                  radial-gradient(circle at 85% 15%, rgba(254, 243, 199, 0.55) 0%, transparent 45%),
+                  linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- TOP ANNOUNCEMENT BAR -->
+  <div class="bg-slate-900 text-white text-xs sm:text-sm py-2.5 px-4 text-center font-medium flex items-center justify-center gap-2">
+    <span class="bg-brand-500 text-white text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full">New</span>
+    <span>Introducing Happy Scribe AI Notetaker &amp; 99% Human-Verified Subtitles in 120+ Languages</span>
+    <a href="#editor-studio" class="underline hover:text-brand-100 inline-flex items-center gap-1 ml-1">
+      Try Interactive Studio <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+    </a>
+  </div>
+
+  <!-- STICKY NAVIGATION -->
+  <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between py-4">
+      <!-- Brand Logo -->
+      <a href="#" class="flex items-center gap-2.5 group">
+        <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-white shadow-sm group-hover:bg-brand-600 transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>
+          </svg>
+        </div>
+        <span class="font-display font-extrabold text-xl tracking-tight text-slate-900">Happy Scribe</span>
+      </a>
+
+      <!-- Desktop Links -->
+      <nav class="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
+        <a href="#editor-studio" class="hover:text-brand-500 transition flex items-center gap-1">
+          Interactive Studio
+        </a>
+        <a href="#services" class="hover:text-brand-500 transition">Services</a>
+        <a href="#ai-vs-human" class="hover:text-brand-500 transition">AI vs. Human</a>
+        <a href="#pricing" class="hover:text-brand-500 transition">Pricing</a>
+        <a href="#faq" class="hover:text-brand-500 transition">FAQ</a>
+      </nav>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3">
+        <button onclick="openUploadModal()" class="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700 hover:text-brand-500 px-3 py-2 transition">
+          <i data-lucide="upload-cloud" class="w-4 h-4"></i> Upload File
+        </button>
+        <a href="#editor-studio" class="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm shadow-brand-500/20 transition">
+          <span>Get started free</span>
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero-mesh pt-14 pb-20 border-b border-slate-200/70">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <!-- Trust Pill -->
+      <div class="inline-flex items-center gap-2 bg-white border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-700 shadow-sm mb-6">
+        <span class="flex h-2 w-2 rounded-full bg-emerald-500"></span>
+        <span>Trusted by 100,000+ media teams &amp; journalists worldwide</span>
+        <span class="text-slate-300">|</span>
+        <span class="text-amber-500 font-bold">★ 4.8/5 on Trustpilot</span>
+      </div>
+
+      <!-- Main Headline -->
+      <h1 class="font-display font-extrabold text-4xl sm:text-6xl lg:text-[64px] text-slate-900 tracking-tight leading-[1.08] max-w-4xl mx-auto">
+        Transcription &amp; Subtitles <br class="hidden sm:inline" />
+        <span class="bg-gradient-to-r from-brand-500 via-indigo-600 to-violet-600 bg-clip-text text-transparent">in One Place.</span>
+      </h1>
+
+      <p class="mt-6 text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed">
+        Combine the speed of AI with the precision of native language experts. Generate transcripts, subtitles, and translations in <strong class="text-slate-800">120+ languages</strong>.
+      </p>
+
+      <!-- Dual Service Selector Pills -->
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <a href="#editor-studio" class="inline-flex items-center gap-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold px-7 py-4 rounded-2xl shadow-lg shadow-slate-900/15 transition text-base">
+          <i data-lucide="play-circle" class="w-5 h-5 text-brand-100"></i>
+          Launch Live Transcription Studio
+        </a>
+        <button onclick="openUploadModal()" class="inline-flex items-center gap-2.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-semibold px-7 py-4 rounded-2xl shadow-sm transition text-base">
+          <i data-lucide="mic" class="w-5 h-5 text-brand-500"></i>
+          Test Live Microphone Dictation
+        </button>
+      </div>
+
+      <!-- Key Metrics Bar -->
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs sm:text-sm text-slate-500 font-medium">
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> AI ready in 5 minutes (95% accuracy)</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i> Human-verified in 24h (99% accuracy)</span>
+        <span class="flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-emerald-500"></i> GDPR &amp; SOC 2 Type II Compliant</span>
+      </div>
+
+      <!-- INTERACTIVE WORKSPACE STUDIO -->
+      <div id="editor-studio" class="mt-12 text-left bg-white rounded-3xl border border-slate-200/90 shadow-2xl shadow-slate-900/10 overflow-hidden">
+        <!-- Studio Top Toolbar -->
+        <div class="bg-slate-900 text-white px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 border-b border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-1.5">
+              <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+              <span class="w-3 h-3 rounded-full bg-amber-400"></span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            </div>
+            <span class="text-slate-600">|</span>
+            <div class="flex items-center gap-2">
+              <i data-lucide="file-audio" class="w-4 h-4 text-brand-100"></i>
+              <span id="studio-filename" class="font-semibold text-sm tracking-tight">Global_Media_Summit_Interview.mp4</span>
+              <span id="accuracy-badge" class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] px-2 py-0.5 rounded-md font-semibold">
+                AI 95% Mode
+              </span>
+            </div>
+          </div>
+
+          <!-- Studio Mode Switcher -->
+          <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+            <button id="tab-transcription" onclick="setStudioMode('transcription')" class="px-3 py-1.5 rounded-lg bg-brand-500 text-white transition">
+              Transcription View
+            </button>
+            <button id="tab-subtitles" onclick="setStudioMode('subtitles')" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition">
+              Subtitles View (CPS/CPL)
+            </button>
+            <button id="tab-human" onclick="toggleHumanBadge()" class="px-3 py-1.5 rounded-lg text-amber-300 hover:bg-slate-700 transition flex items-center gap-1">
+              <i data-lucide="user-check" class="w-3.5 h-3.5"></i> Verify 99% Human
+            </button>
+          </div>
+
+          <!-- Export Dropdown / Buttons -->
+          <div class="flex items-center gap-2">
+            <button onclick="exportFile('srt')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> .SRT
+            </button>
+            <button onclick="exportFile('vtt')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> .VTT
+            </button>
+            <button onclick="exportFile('txt')" class="bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Export .TXT
+            </button>
+          </div>
+        </div>
+
+        <!-- Studio Main Split Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12">
+          <!-- Left Column: Transcript / Subtitle Interactive Editor (7 cols) -->
+          <div class="lg:col-span-7 p-6 sm:p-8 border-b lg:border-b-0 lg:border-r border-slate-200 flex flex-col justify-between max-h-[520px] overflow-y-auto">
+            <div>
+              <!-- Editor Sub-bar -->
+              <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-slate-100 text-xs text-slate-500">
+                <div class="flex items-center gap-3">
+                  <span class="font-semibold text-slate-700 flex items-center gap-1">
+                    <i data-lucide="globe" class="w-3.5 h-3.5 text-brand-500"></i> Language:
+                  </span>
+                  <select id="translation-select" onchange="translateTranscript(this.value)" class="bg-slate-100 text-slate-800 font-semibold rounded-lg px-2.5 py-1 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <option value="en">English (Original)</option>
+                    <option value="es">Spanish (Translated)</option>
+                    <option value="fr">French (Translated)</option>
+                    <option value="de">German (Translated)</option>
+                  </select>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button id="mic-btn" onclick="toggleMicDictation()" class="inline-flex items-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold px-2.5 py-1 rounded-lg transition">
+                    <span id="mic-dot" class="w-2 h-2 rounded-full bg-rose-500"></span>
+                    <span id="mic-label">Dictate with Mic</span>
+                  </button>
+                  <span class="text-slate-400 hidden sm:inline">Click any word to jump or edit</span>
+                </div>
+              </div>
+
+              <!-- Transcript Segments Container -->
+              <div id="transcript-container" class="space-y-6">
+                <!-- Dynamically rendered by JS -->
+              </div>
+            </div>
+
+            <!-- Bottom Helper -->
+            <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
+              <span>Auto-saved to workspace • Proofreading Assist Active</span>
+              <button onclick="addCustomParagraph()" class="text-brand-500 hover:underline font-semibold flex items-center gap-1">
+                + Add Speaker Segment
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Video Preview + Live Subtitle Overlay + Waveform Controls (5 cols) -->
+          <div class="lg:col-span-5 bg-slate-50 p-6 flex flex-col justify-between">
+            <div>
+              <!-- Simulated Video Monitor -->
+              <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video shadow-md border border-slate-800 flex flex-col justify-between p-4">
+                <!-- Top camera HUD -->
+                <div class="flex items-center justify-between text-[11px] font-mono text-slate-300 z-10">
+                  <span class="bg-black/50 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1.5">
+                    <span id="rec-indicator" class="w-2 h-2 rounded-full bg-emerald-400"></span> CAM A • 4K 24FPS
+                  </span>
+                  <span id="video-timecode" class="bg-black/50 backdrop-blur px-2 py-0.5 rounded">00:00.0 / 00:16.0</span>
+                </div>
+
+                <!-- Simulated Speaker Avatar Visual -->
+                <div class="my-auto flex flex-col items-center justify-center text-center px-4">
+                  <div id="speaker-avatar-ring" class="w-16 h-16 rounded-full bg-gradient-to-tr from-brand-500 to-violet-500 p-0.5 shadow-lg transition-transform duration-300">
+                    <div class="w-full h-full bg-slate-900 rounded-full flex items-center justify-center text-white font-display font-bold text-lg" id="active-speaker-initials">
+                      EL
+                    </div>
+                  </div>
+                  <p id="active-speaker-name" class="mt-2 text-xs font-semibold text-slate-300 tracking-wide">
+                    Elena Rostova (Host)
+                  </p>
+                </div>
+
+                <!-- Burned-in Live Subtitle Box -->
+                <div class="z-10 text-center px-2">
+                  <div id="live-subtitle-box" class="inline-block bg-black/80 backdrop-blur-sm text-white text-xs sm:text-sm font-medium px-3.5 py-1.5 rounded-lg border border-white/10 shadow-lg max-w-full leading-snug">
+                    Welcome back to the Global Media Summit. Today we're exploring how AI transforms accessibility.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Subtitle Metrics Strip (CPS / CPL) -->
+              <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <div class="text-[11px] text-slate-400 font-medium">Reading Speed</div>
+                  <div id="metric-cps" class="text-sm font-bold text-emerald-600 mt-0.5">14.2 CPS (Optimal)</div>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <div class="text-[11px] text-slate-400 font-medium">Line Length</div>
+                  <div id="metric-cpl" class="text-sm font-bold text-slate-800 mt-0.5">38 CPL Max</div>
+                </div>
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <div class="text-[11px] text-slate-400 font-medium">Speakers</div>
+                  <div class="text-sm font-bold text-brand-500 mt-0.5">2 Detected</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Audio Waveform & Transport Controls -->
+            <div class="mt-6 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+              <div class="flex items-center justify-between text-xs font-semibold text-slate-500 mb-2">
+                <span>Waveform Timeline Sync</span>
+                <div class="flex items-center gap-1.5">
+                  <span>Speed:</span>
+                  <button onclick="cycleSpeed()" id="speed-btn" class="bg-slate-100 hover:bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-bold transition">1.0x</button>
+                </div>
+              </div>
+
+              <!-- Interactive Waveform Bars -->
+              <div id="waveform" class="h-12 flex items-center justify-between gap-1 cursor-pointer px-1" onclick="scrubWaveform(event)">
+                <!-- Populated by JS -->
+              </div>
+
+              <!-- Play / Pause / Reset Bar -->
+              <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <button id="play-btn" onclick="togglePlayback()" class="w-10 h-10 rounded-xl bg-brand-500 hover:bg-brand-600 text-white flex items-center justify-center shadow-sm transition">
+                    <i id="play-icon" data-lucide="play" class="w-5 h-5 fill-current"></i>
+                  </button>
+                  <button onclick="resetPlayback()" class="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition" title="Restart">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  </button>
+                </div>
+                <div class="text-xs text-slate-500 font-medium">
+                  Press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-[11px] font-mono text-slate-700">Tab</kbd> or click Play to preview sync
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trusted Logos Strip -->
+      <div class="mt-14 pt-8 border-t border-slate-200/60">
+        <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-6">
+          Powering transcription &amp; localization workflows at
+        </p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 items-center justify-items-center opacity-70 grayscale hover:grayscale-0 transition duration-300">
+          <span class="font-display font-extrabold text-xl tracking-widest text-slate-800">BBC</span>
+          <span class="font-display font-bold text-xl tracking-tight text-slate-800">Spotify</span>
+          <span class="font-serif font-bold text-xl tracking-normal text-slate-800">Forbes</span>
+          <span class="font-display font-extrabold text-lg tracking-wider text-slate-800">UNITED NATIONS</span>
+          <span class="font-display font-bold text-xl italic text-slate-800">Canva</span>
+          <span class="font-display font-extrabold text-xl tracking-tight text-slate-800">Mediaset</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CORE SERVICES GRID -->
+  <section id="services" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <span class="text-brand-500 font-bold text-xs uppercase tracking-widest">All-in-One Language Platform</span>
+        <h2 class="mt-2 font-display font-extrabold text-3xl sm:text-4xl text-slate-900">
+          Built for Media, Creators, and Global Enterprises
+        </h2>
+        <p class="mt-3 text-slate-600">
+          Switch seamlessly between instant AI generation and 99% accurate human proofreading inside the same collaborative workspace.
+        </p>
+      </div>
+
+      <div class="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Card 1 -->
+        <div class="rounded-3xl border border-slate-200 p-8 hover:shadow-xl hover:border-brand-500/40 transition bg-slate-50/40 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mb-6">
+              <i data-lucide="file-text" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-display font-bold text-xl text-slate-900">Audio &amp; Video Transcription</h3>
+            <p class="mt-3 text-slate-600 text-sm leading-relaxed">
+              Convert interviews, podcasts, and lectures into searchable text. Automatic speaker diarization, custom vocabulary glossaries, and instant Word/PDF exports.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-200/70 flex items-center justify-between text-xs font-semibold">
+            <span class="text-slate-500">AI: 5 min • Human: 24 hr</span>
+            <a href="#editor-studio" class="text-brand-500 hover:underline flex items-center gap-1">Try Studio <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="rounded-3xl border border-slate-200 p-8 hover:shadow-xl hover:border-brand-500/40 transition bg-slate-50/40 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-6">
+              <i data-lucide="captions" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-display font-bold text-xl text-slate-900">Broadcast-Grade Subtitling</h3>
+            <p class="mt-3 text-slate-600 text-sm leading-relaxed">
+              Frame-accurate timestamps, customizable CPS (Characters Per Second) &amp; CPL limits, SDH sound tags for accessibility, and direct burned-in video exports.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-200/70 flex items-center justify-between text-xs font-semibold">
+            <span class="text-slate-500">SRT, VTT, STL &amp; MP4 Burn-in</span>
+            <a href="#editor-studio" onclick="setStudioMode('subtitles')" class="text-brand-500 hover:underline flex items-center gap-1">Subtitle Mode <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i></a>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="rounded-3xl border border-slate-200 p-8 hover:shadow-xl hover:border-brand-500/40 transition bg-slate-50/40 flex flex-col justify-between">
+          <div>
+            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-6">
+              <i data-lucide="languages" class="w-6 h-6"></i>
+            </div>
+            <h3 class="font-display font-bold text-xl text-slate-900">Subtitle Translation</h3>
+            <p class="mt-3 text-slate-600 text-sm leading-relaxed">
+              Reach global audiences with context-aware neural translation or native human subtitlers across 120+ languages and regional dialects.
+            </p>
+          </div>
+          <div class="mt-6 pt-4 border-t border-slate-200/70 flex items-center justify-between text-xs font-semibold">
+            <span class="text-slate-500">120+ Languages Supported</span>
+            <a href="#editor-studio" class="text-brand-500 hover:underline flex items-center gap-1">Test Translation <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI VS HUMAN COMPARISON & MINUTE CALCULATOR -->
+  <section id="ai-vs-human" class="py-20 bg-slate-900 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+        <!-- Left Description -->
+        <div class="lg:col-span-6">
+          <span class="bg-brand-500/20 text-brand-100 border border-brand-500/30 text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            Hybrid AI + Human Engine
+          </span>
+          <h2 class="mt-4 font-display font-extrabold text-3xl sm:text-4xl leading-tight">
+            Need instant drafts or 99% broadcast perfection?
+          </h2>
+          <p class="mt-4 text-slate-300 leading-relaxed">
+            Happy Scribe lets you start with fast AI transcription and upgrade any file to <strong>Human-Made</strong> with one click. Our vetted linguists review every syllable and sync every frame.
+          </p>
+
+          <!-- Comparison Cards -->
+          <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-slate-800/90 border border-slate-700 rounded-2xl p-5">
+              <div class="flex items-center justify-between">
+                <span class="font-display font-bold text-lg text-white">AI-Generated</span>
+                <span class="bg-brand-500 text-xs font-bold px-2.5 py-0.5 rounded-full">95% Accuracy</span>
+              </div>
+              <ul class="mt-4 space-y-2.5 text-xs text-slate-300">
+                <li class="flex items-center gap-2"><i data-lucide="zap" class="w-4 h-4 text-amber-400"></i> 5-minute turnaround</li>
+                <li class="flex items-center gap-2"><i data-lucide="users" class="w-4 h-4 text-brand-100"></i> Automatic speaker detection</li>
+                <li class="flex items-center gap-2"><i data-lucide="Sparkles" class="w-4 h-4 text-brand-100"></i> AI summaries &amp; chapters</li>
+              </ul>
+            </div>
+
+            <div class="bg-gradient-to-br from-brand-600/30 to-indigo-900/40 border border-brand-500/50 rounded-2xl p-5">
+              <div class="flex items-center justify-between">
+                <span class="font-display font-bold text-lg text-white">Human-Made</span>
+                <span class="bg-emerald-500 text-slate-950 text-xs font-bold px-2.5 py-0.5 rounded-full">99% Accuracy</span>
+              </div>
+              <ul class="mt-4 space-y-2.5 text-xs text-slate-200">
+                <li class="flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-emerald-400"></i> 12 to 24-hour delivery</li>
+                <li class="flex items-center gap-2"><i data-lucide="award" class="w-4 h-4 text-emerald-400"></i> Native language specialists</li>
+                <li class="flex items-center gap-2"><i data-lucide="check-check" class="w-4 h-4 text-emerald-400"></i> Custom style guides &amp; SDH</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Interactive Estimator Card -->
+        <div class="lg:col-span-6 bg-white text-slate-900 rounded-3xl p-8 shadow-2xl">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h3 class="font-display font-bold text-xl">Project Turnaround &amp; Cost Estimator</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Drag the slider to estimate your media duration</p>
+            </div>
+            <span id="calc-minutes-badge" class="bg-brand-50 text-brand-600 font-display font-extrabold text-lg px-3.5 py-1 rounded-xl">
+              60 mins
+            </span>
+          </div>
+
+          <!-- Slider -->
+          <div class="mt-6">
+            <input id="duration-slider" type="range" min="10" max="600" step="10" value="60" oninput="updateEstimator(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-brand-500" />
+            <div class="flex justify-between text-[11px] font-semibold text-slate-400 mt-2">
+              <span>10 mins</span>
+              <span>120 mins</span>
+              <span>300 mins</span>
+              <span>600 mins (10 hrs)</span>
+            </div>
+          </div>
+
+          <!-- Output Boxes -->
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="rounded-2xl border border-slate-200 p-4 bg-slate-50">
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">AI Service Estimate</div>
+              <div id="calc-ai-price" class="text-2xl font-display font-extrabold text-slate-900 mt-1">$10.00</div>
+              <div class="text-xs text-emerald-600 font-semibold mt-1">Ready in ~4 minutes</div>
+              <div class="text-[11px] text-slate-500 mt-2">Included in Basic/Pro subscriptions or $0.20/min</div>
+            </div>
+
+            <div class="rounded-2xl border-2 border-brand-500 p-4 bg-brand-50/40">
+              <div class="text-xs font-bold uppercase tracking-wider text-brand-600">Human 99% Estimate</div>
+              <div id="calc-human-price" class="text-2xl font-display font-extrabold text-slate-900 mt-1">$120.00</div>
+              <div class="text-xs text-brand-600 font-semibold mt-1">Guaranteed within 24 hours</div>
+              <div class="text-[11px] text-slate-500 mt-2">$2.00/min • Expert native proofreader</div>
+            </div>
+          </div>
+
+          <button onclick="openUploadModal()" class="mt-6 w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3.5 rounded-xl shadow-md shadow-brand-500/20 transition flex items-center justify-center gap-2">
+            <span>Start With This Estimate</span>
+            <i data-lucide="arrow-right" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING PLANS SECTION -->
+  <section id="pricing" class="py-20 bg-slate-50 border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center max-w-3xl mx-auto">
+        <span class="text-brand-500 font-bold text-xs uppercase tracking-widest">Flexible Plans</span>
+        <h2 class="mt-2 font-display font-extrabold text-3xl sm:text-4xl text-slate-900">
+          Transparent Pricing for Every Workflow
+        </h2>
+        <!-- Billing Toggle -->
+        <div class="mt-6 inline-flex items-center gap-3 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+          <button id="bill-annual" onclick="setBilling(true)" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white transition">
+            Annual Billing (Save 34%)
+          </button>
+          <button id="bill-monthly" onclick="setBilling(false)" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition">
+            Monthly Billing
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 Pricing Cards -->
+      <div class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Free -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="font-display font-bold text-lg text-slate-900">Free Trial</h3>
+            <p class="text-xs text-slate-500 mt-1">Explore the interactive editor &amp; AI quality</p>
+            <div class="mt-5 flex items-baseline gap-1">
+              <span class="font-display font-extrabold text-4xl text-slate-900">$0</span>
+              <span class="text-xs text-slate-400 font-medium">/ forever</span>
+            </div>
+            <ul class="mt-6 space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> 10 AI minutes included</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Interactive transcript &amp; subtitle studio</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Unlimited team viewers</li>
+            </ul>
+          </div>
+          <a href="#editor-studio" class="mt-8 block text-center bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2.5 rounded-xl text-xs transition">
+            Try Free Now
+          </a>
+        </div>
+
+        <!-- Basic -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="font-display font-bold text-lg text-slate-900">Basic</h3>
+            <p class="text-xs text-slate-500 mt-1">For individual creators &amp; podcasters</p>
+            <div class="mt-5 flex items-baseline gap-1">
+              <span id="price-basic" class="font-display font-extrabold text-4xl text-slate-900">$10</span>
+              <span class="text-xs text-slate-400 font-medium">/ month</span>
+            </div>
+            <ul class="mt-6 space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> 120 minutes of AI credits / mo</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Export SRT, VTT, DOCX, PDF</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> No watermark on subtitle burn-in</li>
+            </ul>
+          </div>
+          <button onclick="openUploadModal()" class="mt-8 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs transition">
+            Choose Basic
+          </button>
+        </div>
+
+        <!-- Pro (Highlighted) -->
+        <div class="bg-white rounded-3xl border-2 border-brand-500 p-6 shadow-xl shadow-brand-500/10 relative flex flex-col justify-between">
+          <span class="absolute -top-3 right-6 bg-brand-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            Most Popular
+          </span>
+          <div>
+            <h3 class="font-display font-bold text-lg text-slate-900">Pro</h3>
+            <p class="text-xs text-slate-500 mt-1">For regular video production &amp; agencies</p>
+            <div class="mt-5 flex items-baseline gap-1">
+              <span id="price-pro" class="font-display font-extrabold text-4xl text-slate-900">$17</span>
+              <span class="text-xs text-slate-400 font-medium">/ month</span>
+            </div>
+            <ul class="mt-6 space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i> 300 minutes of AI credits / mo</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i> Custom vocabulary &amp; style guides</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-brand-500"></i> Premiere Pro, FCPX &amp; Avid exports</li>
+            </ul>
+          </div>
+          <button onclick="openUploadModal()" class="mt-8 w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 rounded-xl text-xs transition">
+            Choose Pro
+          </button>
+        </div>
+
+        <!-- Business -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 flex flex-col justify-between">
+          <div>
+            <h3 class="font-display font-bold text-lg text-slate-900">Business</h3>
+            <p class="text-xs text-slate-500 mt-1">For media networks &amp; global teams</p>
+            <div class="mt-5 flex items-baseline gap-1">
+              <span id="price-business" class="font-display font-extrabold text-4xl text-slate-900">$29</span>
+              <span class="text-xs text-slate-400 font-medium">/ month</span>
+            </div>
+            <ul class="mt-6 space-y-3 text-xs text-slate-600">
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> 600 minutes of AI credits / mo</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Team workspaces &amp; role permissions</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-500"></i> Discounts on Human 99% orders</li>
+            </ul>
+          </div>
+          <button onclick="openUploadModal()" class="mt-8 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs transition">
+            Choose Business
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" class="py-16 bg-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="font-display font-extrabold text-3xl text-center text-slate-900">
+        Frequently Asked Questions
+      </h2>
+      <div class="mt-10 space-y-4">
+        <details class="group border border-slate-200 rounded-2xl p-5 bg-slate-50/50 open:bg-white transition">
+          <summary class="font-display font-bold text-base text-slate-900 cursor-pointer list-none flex items-center justify-between">
+            <span>What is the difference between AI and Human-made services?</span>
+            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+            Our AI service delivers transcripts and subtitles in under 5 minutes with up to 95% accuracy—ideal for fast drafts, internal notes, and clear recordings. Our Human-made service pairs our AI engine with native language professionals who manually verify every word and timestamp to guarantee 99% broadcast accuracy within 24 hours.
+          </p>
+        </details>
+
+        <details class="group border border-slate-200 rounded-2xl p-5 bg-slate-50/50 open:bg-white transition">
+          <summary class="font-display font-bold text-base text-slate-900 cursor-pointer list-none flex items-center justify-between">
+            <span>Which export formats does Happy Scribe support?</span>
+            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+            You can export transcripts and subtitles in SRT, VTT, DOCX, PDF, TXT, STL, Premiere Pro Markers, Final Cut Pro XML, Avid DS, or burn subtitles directly into your video file.
+          </p>
+        </details>
+
+        <details class="group border border-slate-200 rounded-2xl p-5 bg-slate-50/50 open:bg-white transition">
+          <summary class="font-display font-bold text-base text-slate-900 cursor-pointer list-none flex items-center justify-between">
+            <span>How secure are my uploaded media files?</span>
+            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 group-open:rotate-180 transition-transform"></i>
+          </summary>
+          <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+            All files are encrypted in transit (TLS 1.3) and at rest (AES-256). Happy Scribe is fully GDPR compliant and SOC 2 Type II certified, and human transcriptionists sign strict NDAs before accessing confidential media.
+          </p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-950 text-slate-400 py-12 border-t border-slate-800 text-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2.5">
+        <div class="w-7 h-7 rounded-lg bg-brand-500 flex items-center justify-center text-white">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/>
+          </svg>
+        </div>
+        <span class="font-display font-bold text-white text-sm">Happy Scribe Clone</span>
+        <span class="text-slate-600">•</span>
+        <span>Single-File GitHub Edition</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="#editor-studio" class="hover:text-white transition">Studio</a>
+        <a href="#services" class="hover:text-white transition">Services</a>
+        <a href="#pricing" class="hover:text-white transition">Pricing</a>
+        <span>© 2026 Happy Scribe UI Replica</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- UPLOAD / NEW PROJECT MODAL -->
+  <div id="upload-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <h3 class="font-display font-bold text-xl text-slate-900">Create New Transcription / Subtitle File</h3>
+        <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-6">
+        <label class="block border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-2xl p-8 text-center cursor-pointer transition bg-slate-50/60">
+          <input type="file" id="file-input" accept="audio/*,video/*" class="hidden" onchange="handleCustomFileUpload(event)" />
+          <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-3">
+            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+          </div>
+          <p class="font-semibold text-sm text-slate-800">Drop an audio or video file here, or click to browse</p>
+          <p class="text-xs text-slate-400 mt-1">Supports MP3, MP4, WAV, MOV, M4A • Instant Studio Load</p>
+        </label>
+
+        <div class="mt-4">
+          <label class="text-xs font-semibold text-slate-600 block mb-1.5">Or paste a public YouTube / Drive URL:</label>
+          <div class="flex gap-2">
+            <input id="custom-url-input" type="text" placeholder="https://youtube.com/watch?v=..." class="flex-1 rounded-xl border border-slate-300 px-3.5 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" />
+            <button onclick="loadFromUrl()" class="bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition">
+              Import
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- APPLICATION JAVASCRIPT -->
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Multi-language sample segments for the interactive Happy Scribe Studio
+    const transcriptsByLang = {
+      en: [
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 0.0,
+          end: 5.5,
+          words: ["Welcome", "back", "to", "the", "Global", "Media", "Summit.", "Today", "we're", "exploring", "how", "AI", "transforms", "accessibility."]
+        },
+        {
+          speaker: "Marcus Vance (Director)",
+          initials: "MV",
+          start: 5.6,
+          end: 11.2,
+          words: ["With", "Happy", "Scribe,", "our", "production", "team", "generates", "multilingual", "subtitles", "in", "minutes", "instead", "of", "days."]
+        },
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 11.3,
+          end: 16.0,
+          words: ["And", "when", "broadcast", "compliance", "requires", "ninety-nine", "percent", "precision,", "human", "linguists", "verify", "every", "line."]
+        }
+      ],
+      es: [
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 0.0,
+          end: 5.5,
+          words: ["Bienvenidos", "de", "nuevo", "a", "la", "Cumbre", "Global.", "Hoy", "exploramos", "cómo", "la", "IA", "transforma", "la", "accesibilidad."]
+        },
+        {
+          speaker: "Marcus Vance (Director)",
+          initials: "MV",
+          start: 5.6,
+          end: 11.2,
+          words: ["Con", "Happy", "Scribe,", "nuestro", "equipo", "genera", "subtítulos", "multilingües", "en", "minutos", "en", "lugar", "de", "días."]
+        },
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 11.3,
+          end: 16.0,
+          words: ["Y", "cuando", "la", "transmisión", "requiere", "un", "noventa", "y", "nueve", "por", "ciento,", "lingüistas", "humanos", "verifican", "todo."]
+        }
+      ],
+      fr: [
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 0.0,
+          end: 5.5,
+          words: ["Bienvenue", "au", "Sommet", "Mondial", "des", "Médias.", "Aujourd'hui,", "nous", "explorons", "comment", "l'IA", "transforme", "l'accessibilité."]
+        },
+        {
+          speaker: "Marcus Vance (Director)",
+          initials: "MV",
+          start: 5.6,
+          end: 11.2,
+          words: ["Avec", "Happy", "Scribe,", "notre", "équipe", "génère", "des", "sous-titres", "multilingues", "en", "quelques", "minutes."]
+        },
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 11.3,
+          end: 16.0,
+          words: ["Et", "lorsque", "la", "diffusion", "exige", "une", "précision", "totale,", "nos", "linguistes", "vérifient", "chaque", "ligne."]
+        }
+      ],
+      de: [
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 0.0,
+          end: 5.5,
+          words: ["Willkommen", "zurück", "beim", "Global", "Media", "Summit.", "Heute", "zeigen", "wir,", "wie", "KI", "Barrierefreiheit", "schafft."]
+        },
+        {
+          speaker: "Marcus Vance (Director)",
+          initials: "MV",
+          start: 5.6,
+          end: 11.2,
+          words: ["Mit", "Happy", "Scribe", "erstellt", "unser", "Team", "mehrsprachige", "Untertitel", "in", "Minuten", "statt", "Tagen."]
+        },
+        {
+          speaker: "Elena Rostova (Host)",
+          initials: "EL",
+          start: 11.3,
+          end: 16.0,
+          words: ["Und", "für", "neunundneunzig", "Prozent", "Präzision", "prüfen", "menschliche", "Experten", "jede", "einzelne", "Zeile."]
+        }
+      ]
+    };
+
+    let currentLang = 'en';
+    let studioMode = 'transcription'; // 'transcription' or 'subtitles'
+    let isPlaying = false;
+    let currentTime = 0.0;
+    const totalDuration = 16.0;
+    let playbackSpeed = 1.0;
+    let playInterval = null;
+    let isHumanVerified = false;
+
+    // Generate Waveform Bars
+    const waveformEl = document.getElementById('waveform');
+    const barHeights = [28, 45, 70, 55, 85, 40, 62, 95, 50, 35, 78, 90, 60, 42, 82, 68, 30, 74, 88, 52, 64, 92, 48, 38, 76, 84, 58, 44, 72, 60, 35, 50];
+
+    function renderWaveform() {
+      waveformEl.innerHTML = '';
+      const progressRatio = currentTime / totalDuration;
+      barHeights.forEach((h, i) => {
+        const barRatio = i / barHeights.length;
+        const bar = document.createElement('div');
+        bar.className = `waveform-bar flex-1 rounded-full ${barRatio <= progressRatio ? 'bg-brand-500' : 'bg-slate-200'}`;
+        bar.style.height = `${h}%`;
+        waveformEl.appendChild(bar);
+      });
+    }
+
+    // Format seconds to 00:00.0
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toFixed(1).padStart(4, '0');
+      return `${m}:${s}`;
+    }
+
+    // Render Transcript / Subtitle Editor
+    function renderTranscript() {
+      const container = document.getElementById('transcript-container');
+      const data = transcriptsByLang[currentLang];
+      container.innerHTML = '';
+
+      data.forEach((seg, segIdx) => {
+        const wordDuration = (seg.end - seg.start) / seg.words.length;
+        const charCount = seg.words.join(' ').length;
+        const cps = (charCount / (seg.end - seg.start)).toFixed(1);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = `p-4 rounded-2xl border transition ${
+          currentTime >= seg.start && currentTime <= seg.end
+            ? 'border-brand-500/50 bg-brand-50/20 shadow-sm'
+            : 'border-slate-200/80 bg-white'
+        }`;
+
+        // Header Row (Speaker + Timestamp + Subtitle CPS Pill)
+        const header = document.createElement('div');
+        header.className = 'flex flex-wrap items-center justify-between gap-2 mb-2';
+        header.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="w-6 h-6 rounded-full bg-brand-100 text-brand-700 font-bold text-[11px] flex items-center justify-center">${seg.initials}</span>
+            <span class="font-display font-bold text-xs text-slate-800">${seg.speaker}</span>
+            <span class="text-[11px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded">${formatTime(seg.start)} → ${formatTime(seg.end)}</span>
+          </div>
+          ${
+            studioMode === 'subtitles'
+              ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">${cps} CPS • ${charCount} chars</span>`
+              : ''
+          }
+        `;
+        wrapper.appendChild(header);
+
+        // Words flow
+        const wordsP = document.createElement('div');
+        wordsP.className = 'text-sm sm:text-base text-slate-700 leading-relaxed flex flex-wrap gap-1';
+
+        seg.words.forEach((word, wIdx) => {
+          const wStart = seg.start + wIdx * wordDuration;
+          const wEnd = wStart + wordDuration;
+          const isCurrent = currentTime >= wStart && currentTime < wEnd;
+
+          const span = document.createElement('span');
+          span.className = `word-token ${isCurrent ? 'word-active' : ''}`;
+          span.textContent = word;
+          span.contentEditable = true;
+          span.spellcheck = false;
+          span.title = `Jump to ${formatTime(wStart)} or click to edit text`;
+
+          span.onclick = () => {
+            currentTime = wStart;
+            updateStudioUI();
+          };
+          span.onblur = (e) => {
+            transcriptsByLang[currentLang][segIdx].words[wIdx] = e.target.textContent.trim();
+            updateLiveSubtitleOverlay();
+          };
+
+          wordsP.appendChild(span);
+        });
+
+        wrapper.appendChild(wordsP);
+        container.appendChild(wrapper);
+      });
+    }
+
+    function updateLiveSubtitleOverlay() {
+      const data = transcriptsByLang[currentLang];
+      const activeSeg = data.find(s => currentTime >= s.start && currentTime <= s.end) || data[0];
+      document.getElementById('live-subtitle-box').textContent = activeSeg.words.join(' ');
+      document.getElementById('active-speaker-name').textContent = activeSeg.speaker;
+      document.getElementById('active-speaker-initials').textContent = activeSeg.initials;
+
+      const charCount = activeSeg.words.join(' ').length;
+      const cps = (charCount / (activeSeg.end - activeSeg.start)).toFixed(1);
+      document.getElementById('metric-cps').textContent = `${cps} CPS (Optimal)`;
+      document.getElementById('metric-cpl').textContent = `${Math.min(42, charCount)} CPL Max`;
+      document.getElementById('video-timecode').textContent = `${formatTime(currentTime)} / ${formatTime(totalDuration)}`;
+    }
+
+    function updateStudioUI() {
+      renderTranscript();
+      renderWaveform();
+      updateLiveSubtitleOverlay();
+    }
+
+    function togglePlayback() {
+      isPlaying = !isPlaying;
+      const playBtn = document.getElementById('play-btn');
+      const avatarRing = document.getElementById('speaker-avatar-ring');
+
+      if (isPlaying) {
+        playBtn.innerHTML = '<i data-lucide="pause" class="w-5 h-5 fill-current"></i>';
+        avatarRing.classList.add('scale-110');
+        lucide.createIcons();
+        playInterval = setInterval(() => {
+          currentTime += 0.2 * playbackSpeed;
+          if (currentTime >= totalDuration) {
+            currentTime = 0;
+          }
+          updateStudioUI();
+        }, 200);
+      } else {
+        clearInterval(playInterval);
+        playBtn.innerHTML = '<i data-lucide="play" class="w-5 h-5 fill-current"></i>';
+        avatarRing.classList.remove('scale-110');
+        lucide.createIcons();
+      }
+    }
+
+    function resetPlayback() {
+      if (isPlaying) togglePlayback();
+      currentTime = 0.0;
+      updateStudioUI();
+    }
+
+    function scrubWaveform(event) {
+      const rect = waveformEl.getBoundingClientRect();
+      const clickX = event.clientX - rect.left;
+      const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+      currentTime = ratio * totalDuration;
+      updateStudioUI();
+    }
+
+    function cycleSpeed() {
+      const speeds = [1.0, 1.25, 1.5, 2.0];
+      const nextIdx = (speeds.indexOf(playbackSpeed) + 1) % speeds.length;
+      playbackSpeed = speeds[nextIdx];
+      document.getElementById('speed-btn').textContent = `${playbackSpeed.toFixed(2).replace('.00', '.0')}x`;
+    }
+
+    function setStudioMode(mode) {
+      studioMode = mode;
+      const tabTrans = document.getElementById('tab-transcription');
+      const tabSubs = document.getElementById('tab-subtitles');
+      if (mode === 'subtitles') {
+        tabSubs.className = 'px-3 py-1.5 rounded-lg bg-brand-500 text-white transition';
+        tabTrans.className = 'px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition';
+      } else {
+        tabTrans.className = 'px-3 py-1.5 rounded-lg bg-brand-500 text-white transition';
+        tabSubs.className = 'px-3 py-1.5 rounded-lg text-slate-300 hover:text-white transition';
+      }
+      updateStudioUI();
+    }
+
+    function toggleHumanBadge() {
+      isHumanVerified = !isHumanVerified;
+      const badge = document.getElementById('accuracy-badge');
+      if (isHumanVerified) {
+        badge.textContent = 'Human Verified 99%';
+        badge.className = 'bg-amber-400/20 text-amber-300 border border-amber-400/40 text-[11px] px-2 py-0.5 rounded-md font-semibold';
+      } else {
+        badge.textContent = 'AI 95% Mode';
+        badge.className = 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[11px] px-2 py-0.5 rounded-md font-semibold';
+      }
+    }
+
+    function translateTranscript(lang) {
+      currentLang = lang;
+      updateStudioUI();
+    }
+
+    function addCustomParagraph() {
+      const segs = transcriptsByLang[currentLang];
+      const lastEnd = segs[segs.length - 1].end;
+      segs.push({
+        speaker: "New Speaker",
+        initials: "NS",
+        start: +(lastEnd + 0.1).toFixed(1),
+        end: +(lastEnd + 4.0).toFixed(1),
+        words: ["Click", "any", "word", "here", "to", "customize", "your", "new", "transcript", "line."]
+      });
+      updateStudioUI();
+    }
+
+    // Export Real SRT / VTT / TXT Files
+    function exportFile(format) {
+      const segs = transcriptsByLang[currentLang];
+      let output = '';
+
+      if (format === 'srt') {
+        segs.forEach((s, idx) => {
+          output += `${idx + 1}\n00:00:${s.start.toFixed(3).replace('.', ',').padStart(6, '0')} --> 00:00:${s.end.toFixed(3).replace('.', ',').padStart(6, '0')}\n${s.words.join(' ')}\n\n`;
+        });
+      } else if (format === 'vtt') {
+        output = 'WEBVTT\n\n';
+        segs.forEach((s) => {
+          output += `00:00:${s.start.toFixed(3).padStart(6, '0')} --> 00:00:${s.end.toFixed(3).padStart(6, '0')}\n<v ${s.speaker}>${s.words.join(' ')}\n\n`;
+        });
+      } else {
+        segs.forEach((s) => {
+          output += `[${formatTime(s.start)}] ${s.speaker}: ${s.words.join(' ')}\n\n`;
+        });
+      }
+
+      const blob = new Blob([output], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `happyscribe_export_${currentLang}.${format}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Web Speech API Live Microphone Dictation
+    let recognition = null;
+    let isDictating = false;
+
+    function toggleMicDictation() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const micLabel = document.getElementById('mic-label');
+      const micDot = document.getElementById('mic-dot');
+
+      if (!SpeechRecognition) {
+        alert('Your browser does not support the Web Speech API. Try Chrome or Edge for live microphone transcription.');
+        return;
+      }
+
+      if (isDictating && recognition) {
+        recognition.stop();
+        isDictating = false;
+        micLabel.textContent = 'Dictate with Mic';
+        micDot.classList.remove('animate-ping');
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.lang = currentLang === 'en' ? 'en-US' : currentLang;
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        isDictating = true;
+        micLabel.textContent = 'Listening... Speak now';
+        micDot.classList.add('animate-ping');
+      };
+
+      recognition.onresult = (event) => {
+        const spokenText = event.results[0][0].transcript;
+        const wordsArr = spokenText.trim().split(/\s+/);
+        const segs = transcriptsByLang[currentLang];
+        const lastEnd = segs[segs.length - 1].end;
+        segs.push({
+          speaker: "You (Live Mic)",
+          initials: "ME",
+          start: +(lastEnd + 0.1).toFixed(1),
+          end: +(lastEnd + 4.5).toFixed(1),
+          words: wordsArr
+        });
+        updateStudioUI();
+      };
+
+      recognition.onend = () => {
+        isDictating = false;
+        micLabel.textContent = 'Dictate with Mic';
+        micDot.classList.remove('animate-ping');
+      };
+
+      recognition.start();
+    }
+
+    // Cost Estimator Logic
+    function updateEstimator(mins) {
+      document.getElementById('calc-minutes-badge').textContent = `${mins} mins`;
+      const aiCost = (mins * 0.20).toFixed(2);
+      const humanCost = (mins * 2.00).toFixed(2);
+      document.getElementById('calc-ai-price').textContent = `$${aiCost}`;
+      document.getElementById('calc-human-price').textContent = `$${humanCost}`;
+    }
+
+    // Pricing Billing Toggle
+    function setBilling(isAnnual) {
+      const btnAnnual = document.getElementById('bill-annual');
+      const btnMonthly = document.getElementById('bill-monthly');
+      if (isAnnual) {
+        btnAnnual.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white transition';
+        btnMonthly.className = 'px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        document.getElementById('price-basic').textContent = '$10';
+        document.getElementById('price-pro').textContent = '$17';
+        document.getElementById('price-business').textContent = '$29';
+      } else {
+        btnMonthly.className = 'px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 text-white transition';
+        btnAnnual.className = 'px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 transition';
+        document.getElementById('price-basic').textContent = '$17';
+        document.getElementById('price-pro').textContent = '$29';
+        document.getElementById('price-business').textContent = '$49';
+      }
+    }
+
+    // Upload Modal Controls
+    function openUploadModal() {
+      const modal = document.getElementById('upload-modal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeUploadModal() {
+      const modal = document.getElementById('upload-modal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleCustomFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      document.getElementById('studio-filename').textContent = file.name;
+      closeUploadModal();
+      document.getElementById('editor-studio').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function loadFromUrl() {
+      const val = document.getElementById('custom-url-input').value.trim();
+      if (!val) return;
+      document.getElementById('studio-filename').textContent = val.replace(/^https?:\/\//, '').slice(0, 32);
+      closeUploadModal();
+      document.getElementById('editor-studio').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Initial render
+    updateStudioUI();
+  </script>
+</body>
+</html>
